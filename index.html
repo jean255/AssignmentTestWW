@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>업무 배정 시스템</title>
+<title>회의 배정 시스템</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -164,9 +164,9 @@
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <header>
-  <h1>📋 업무 배정 시스템</h1>
+  <h1>📋 회의 배정 시스템</h1>
   <div class="stats">
-    <div class="stat-item">전체 업무 <span class="stat-badge" id="hd-total">0</span></div>
+    <div class="stat-item">전체 회의 <span class="stat-badge" id="hd-total">0</span></div>
     <div class="stat-item">진행중 <span class="stat-badge" id="hd-inprogress">0</span></div>
     <div class="stat-item">완료 <span class="stat-badge" id="hd-done">0</span></div>
   </div>
@@ -176,7 +176,7 @@
 <div class="container">
   <div class="tabs">
     <button class="tab active" onclick="showPage('dashboard')">대시보드</button>
-    <button class="tab" onclick="showPage('tasks')">업무 목록</button>
+    <button class="tab" onclick="showPage('tasks')">회의 목록</button>
     <button class="tab" onclick="showPage('members')">팀원 관리</button>
     <button class="tab" onclick="showPage('import')">📂 파일 가져오기</button>
   </div>
@@ -204,15 +204,15 @@
   <!-- Tasks List -->
   <div class="page" id="page-tasks">
     <div class="card">
-      <div class="card-title">➕ 새 업무 등록</div>
+      <div class="card-title">➕ 새 회의 등록</div>
       <div class="form-grid">
         <div class="form-group full">
-          <label>업무명 *</label>
-          <input type="text" id="task-title" placeholder="업무 제목을 입력하세요">
+          <label>회의명 *</label>
+          <input type="text" id="task-title" placeholder="회의 제목을 입력하세요">
         </div>
         <div class="form-group full">
           <label>설명</label>
-          <textarea id="task-desc" placeholder="업무 내용을 입력하세요" oninput="renderFormAssigneeSlots()"></textarea>
+          <textarea id="task-desc" placeholder="회의 내용을 입력하세요" oninput="renderFormAssigneeSlots()"></textarea>
         </div>
         <div class="form-group full">
           <label>담당자 * <span style="font-size:11px;color:var(--text-muted);font-weight:400">(기본 2명, 추가 가능 / "---"는 미배정)</span></label>
@@ -242,14 +242,14 @@
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn btn-primary" onclick="addTask()">업무 등록</button>
+        <button class="btn btn-primary" onclick="addTask()">회의 등록</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">🗂 업무 목록</div>
+      <div class="card-title">🗂 회의 목록</div>
       <div class="filters">
-        <input type="text" class="search-input" id="search-input" placeholder="업무명 검색..." oninput="renderTaskList()">
+        <input type="text" class="search-input" id="search-input" placeholder="회의명 검색..." oninput="renderTaskList()">
         <select class="filter-select" id="filter-assignee" onchange="renderTaskList()">
           <option value="">전체 담당자</option>
         </select>
@@ -298,10 +298,10 @@
   <!-- Import Page -->
   <div class="page" id="page-import">
     <div class="card">
-      <div class="card-title">📂 엑셀 파일로 업무 가져오기</div>
+      <div class="card-title">📂 엑셀 파일로 회의 가져오기</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
         <strong>지원 형식:</strong> .xlsx, .xls, .csv &nbsp;|&nbsp;
-        <strong>인식 컬럼:</strong> Task(업무명), Date(날짜), Start(시작), End(종료)
+        <strong>인식 컬럼:</strong> Task(회의명), Date(날짜), Start(시작), End(종료)
       </p>
 
       <div id="drop-zone" style="border:2px dashed var(--border);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px"
@@ -538,7 +538,7 @@ function memberOpts(selectedId = '', cat = '', conflictCheck = null) {
       ? hasTimeConflict(m.id, conflictCheck.date, conflictCheck.timeDesc, conflictCheck.excludeId)
       : false;
     const gray = !eligible || conflict;
-    const suffix = conflict ? ' (업무 중복)' : !eligible ? ' (배정불가)' : '';
+    const suffix = conflict ? ' (회의 중복)' : !eligible ? ' (배정불가)' : '';
     return `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''} style="${gray ? 'color:#94a3b8' : ''}">${esc(m.name)}${suffix}</option>`;
   }).join('');
   return none + opts;
@@ -624,12 +624,12 @@ function renderDashboardSection1() {
       <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:24px;text-align:center">
         <div style="font-size:42px;font-weight:800;color:#ea580c">${unassigned}</div>
         <div style="font-size:14px;font-weight:600;color:#c2410c;margin-top:6px">⚠️ 배정 필요</div>
-        <div style="font-size:12px;color:#9a3412;margin-top:4px">담당자 미배정 업무</div>
+        <div style="font-size:12px;color:#9a3412;margin-top:4px">담당자 미배정 회의</div>
       </div>
       <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:24px;text-align:center">
         <div style="font-size:42px;font-weight:800;color:#16a34a">${assigned}</div>
         <div style="font-size:14px;font-weight:600;color:#15803d;margin-top:6px">✅ 배정 완료</div>
-        <div style="font-size:12px;color:#166534;margin-top:4px">담당자 배정된 업무</div>
+        <div style="font-size:12px;color:#166534;margin-top:4px">담당자 배정된 회의</div>
       </div>
     </div>
   `;
@@ -666,7 +666,7 @@ function renderDashboardSection2() {
       <thead>
         <tr style="border-bottom:2px solid var(--border);text-align:left">
           <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">팀원</th>
-          <th style="padding:10px 12px;color:var(--text-muted);font-weight:600;text-align:center">이번 주 배정 업무</th>
+          <th style="padding:10px 12px;color:var(--text-muted);font-weight:600;text-align:center">이번 주 배정 회의</th>
           <th style="padding:10px 12px;color:var(--text-muted);font-weight:600;text-align:center">총 소요 시간</th>
         </tr>
       </thead>
@@ -747,7 +747,7 @@ function renderKanban() {
           <div class="kanban-col-title"><span class="col-dot" style="background:${col.color}"></span>${col.title}</div>
           <span class="col-count">${tasks.length}</span>
         </div>
-        ${tasks.length === 0 ? '<div class="empty" style="padding:20px 0;font-size:12px">업무 없음</div>' : tasks.map(taskCardHtml).join('')}
+        ${tasks.length === 0 ? '<div class="empty" style="padding:20px 0;font-size:12px">회의 없음</div>' : tasks.map(taskCardHtml).join('')}
       </div>
     `;
   }).join('');
@@ -772,7 +772,7 @@ function renderTaskList() {
   if (!el) return;
 
   if (tasks.length === 0) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>조건에 맞는 업무가 없습니다</div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>조건에 맞는 회의가 없습니다</div>';
     return;
   }
 
@@ -780,7 +780,7 @@ function renderTaskList() {
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>
         <tr style="border-bottom:2px solid var(--border);text-align:left">
-          <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">업무명</th>
+          <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">회의명</th>
           <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">담당자</th>
           <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">카테고리</th>
           <th style="padding:10px 12px;color:var(--text-muted);font-weight:600">상태</th>
@@ -844,7 +844,7 @@ function renderMembers() {
         <div class="member-info">
           <div class="member-name">${esc(m.name)}</div>
           <div style="display:flex;gap:4px;margin-top:4px">${catBadges}</div>
-          <div class="member-tasks" style="margin-top:4px">${taskCount}개 업무 · ${doneCount}개 완료</div>
+          <div class="member-tasks" style="margin-top:4px">${taskCount}개 회의 · ${doneCount}개 완료</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="openMemberModal('${m.id}')">수정</button>
@@ -864,7 +864,7 @@ function populateFilterSelect() {
 // ── CRUD ─────────────────────────────────────────────────
 function addTask() {
   const title = document.getElementById('task-title').value.trim();
-  if (!title) { toast('업무명을 입력해주세요'); return; }
+  if (!title) { toast('회의명을 입력해주세요'); return; }
 
   // formSlots 동기화 (select DOM에서 읽기)
   const selects = document.querySelectorAll('#form-assignee-slots select');
@@ -887,7 +887,7 @@ function addTask() {
   document.getElementById('task-desc').value = '';
   document.getElementById('task-due').value = '';
   formSlots = ['', ''];
-  toast('업무가 등록되었습니다');
+  toast('회의가 등록되었습니다');
   renderAll();
 }
 
@@ -911,7 +911,7 @@ function deleteMember(id) {
   if (!m) return;
   const count = db.tasks.filter(t => (t.assignees||[]).includes(id)).length;
   const msg = count > 0
-    ? `${m.name}님을 삭제하면 ${count}개의 업무에서 제외됩니다. 삭제할까요?`
+    ? `${m.name}님을 삭제하면 ${count}개의 회의에서 제외됩니다. 삭제할까요?`
     : `${m.name}님을 삭제할까요?`;
   if (!confirm(msg)) return;
   db.members = db.members.filter(x => x.id !== id);
@@ -922,10 +922,10 @@ function deleteMember(id) {
 }
 
 function deleteTask(id) {
-  if (!confirm('이 업무를 삭제할까요?')) return;
+  if (!confirm('이 회의를 삭제할까요?')) return;
   db.tasks = db.tasks.filter(t => t.id !== id);
   save();
-  toast('업무가 삭제되었습니다');
+  toast('회의가 삭제되었습니다');
   closeModalDirect();
   renderAll();
 }
@@ -1050,11 +1050,11 @@ function openTaskEditModal(id) {
   if (!task) return;
   const cat = task.category || '';
 
-  document.getElementById('modal-title').textContent = '업무 수정';
+  document.getElementById('modal-title').textContent = '회의 수정';
   document.getElementById('modal-body').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="form-group">
-        <label>업무명 *</label>
+        <label>회의명 *</label>
         <input type="text" id="edit-task-title" value="${esc(task.title)}" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:inherit;width:100%">
       </div>
       <div class="form-group">
@@ -1136,7 +1136,7 @@ function removeEditSlot(i, taskId) {
 
 function saveTaskEdit(id) {
   const title = document.getElementById('edit-task-title').value.trim();
-  if (!title) { toast('업무명을 입력해주세요'); return; }
+  if (!title) { toast('회의명을 입력해주세요'); return; }
 
   const selects = document.querySelectorAll('#edit-assignee-slots select');
   const assignees = Array.from(selects).map(s => s.value);
@@ -1167,7 +1167,7 @@ function saveTaskEdit(id) {
   task.due      = document.getElementById('edit-task-due').value;
   task.assignees = assignees;
   save();
-  toast('업무가 수정되었습니다');
+  toast('회의가 수정되었습니다');
   closeModalDirect();
   renderAll();
 }
@@ -1363,7 +1363,7 @@ function renderImportPreview() {
       <thead style="position:sticky;top:0;background:#f8fafc;z-index:1">
         <tr style="border-bottom:2px solid var(--border)">
           <th style="padding:10px 12px;width:36px"></th>
-          <th style="padding:10px 12px;text-align:left;color:var(--text-muted);font-weight:600">업무명</th>
+          <th style="padding:10px 12px;text-align:left;color:var(--text-muted);font-weight:600">회의명</th>
           <th style="padding:10px 12px;text-align:left;color:var(--text-muted);font-weight:600;white-space:nowrap">카테고리</th>
           <th style="padding:10px 12px;text-align:left;color:var(--text-muted);font-weight:600;white-space:nowrap">날짜</th>
           <th style="padding:10px 12px;text-align:left;color:var(--text-muted);font-weight:600;white-space:nowrap">시간</th>
@@ -1412,7 +1412,7 @@ function doImport() {
   });
 
   save();
-  toast(`${selected.length}개 업무가 등록되었습니다`);
+  toast(`${selected.length}개 회의가 등록되었습니다`);
   importRows = [];
   importSlots = ['', ''];
   document.getElementById('import-options').style.display = 'none';
