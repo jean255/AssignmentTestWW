@@ -212,7 +212,7 @@
         </div>
         <div class="form-group full">
           <label>설명</label>
-          <textarea id="task-desc" placeholder="업무 내용을 입력하세요"></textarea>
+          <textarea id="task-desc" placeholder="업무 내용을 입력하세요" oninput="renderFormAssigneeSlots()"></textarea>
         </div>
         <div class="form-group full">
           <label>담당자 * <span style="font-size:11px;color:var(--text-muted);font-weight:400">(기본 2명, 추가 가능 / "---"는 미배정)</span></label>
@@ -230,7 +230,7 @@
         </div>
         <div class="form-group">
           <label>일시</label>
-          <input type="date" id="task-due">
+          <input type="date" id="task-due" onchange="renderFormAssigneeSlots()">
         </div>
         <div class="form-group">
           <label>상태</label>
@@ -503,13 +503,43 @@ function renderAll() {
   populateFilterSelect();
 }
 
+// ── 시간 충돌 감지 ────────────────────────────────────────
+function parseTimeRange(desc) {
+  if (!desc) return null;
+  const m = desc.match(/(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  return {
+    start: parseInt(m[1]) * 60 + parseInt(m[2]),
+    end:   parseInt(m[3]) * 60 + parseInt(m[4])
+  };
+}
+
+function hasTimeConflict(memberId, date, timeDesc, excludeTaskId) {
+  if (!date || !timeDesc) return false;
+  const range = parseTimeRange(timeDesc);
+  if (!range) return false;
+  return db.tasks.some(t => {
+    if (t.id === excludeTaskId) return false;
+    if (t.due !== date) return false;
+    if (!(t.assignees || []).includes(memberId)) return false;
+    const tr = parseTimeRange(t.desc);
+    if (!tr) return false;
+    return range.start < tr.end && tr.start < range.end; // 겹침 조건
+  });
+}
+
 // ── 담당자 슬롯 옵션 HTML ────────────────────────────────
-// cat 지정 시 배정불가 멤버는 disabled + 표시
-function memberOpts(selectedId = '', cat = '') {
+// cat 지정 시 배정불가, conflictCheck 지정 시 시간 충돌 표시
+function memberOpts(selectedId = '', cat = '', conflictCheck = null) {
   const none = `<option value="">---</option>`;
   const opts = db.members.map(m => {
     const eligible = !cat || !m.cats || m.cats[cat] !== false;
-    return `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''} style="${!eligible ? 'color:#94a3b8' : ''}">${esc(m.name)}${!eligible ? ' (배정불가)' : ''}</option>`;
+    const conflict = conflictCheck
+      ? hasTimeConflict(m.id, conflictCheck.date, conflictCheck.timeDesc, conflictCheck.excludeId)
+      : false;
+    const gray = !eligible || conflict;
+    const suffix = conflict ? ' (업무 중복)' : !eligible ? ' (배정불가)' : '';
+    return `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''} style="${gray ? 'color:#94a3b8' : ''}">${esc(m.name)}${suffix}</option>`;
   }).join('');
   return none + opts;
 }
@@ -525,9 +555,12 @@ function renderFormAssigneeSlots() {
   const el = document.getElementById('form-assignee-slots');
   if (!el) return;
   const cat = currentFormCat();
+  const date = document.getElementById('task-due')?.value || '';
+  const timeDesc = document.getElementById('task-desc')?.value || '';
+  const conflictCheck = date ? { date, timeDesc, excludeId: null } : null;
   el.innerHTML = formSlots.map((val, i) => `
     <div class="assignee-slot">
-      <select onchange="formSlots[${i}]=this.value">${memberOpts(val, cat)}</select>
+      <select onchange="formSlots[${i}]=this.value">${memberOpts(val, cat, conflictCheck)}</select>
       ${formSlots.length > 1
         ? `<button class="btn-icon" onclick="removeFormSlot(${i})" title="제거">✕</button>`
         : ''}
@@ -955,11 +988,13 @@ function openTaskModal(id) {
 function renderModalAssigneeList(taskId) {
   const el = document.getElementById('modal-assignee-list');
   if (!el) return;
-  const modalCat = (db.tasks.find(t => t.id === taskId) || {}).category || '';
+  const modalTask = db.tasks.find(t => t.id === taskId) || {};
+  const modalCat = modalTask.category || '';
+  const modalConflict = modalTask.due ? { date: modalTask.due, timeDesc: modalTask.desc || '', excludeId: taskId } : null;
   el.innerHTML = modalAssignees.map((val, i) => `
     <div class="modal-assignee-row">
       <select onchange="modalAssignees[${i}]=this.value" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;flex:1">
-        ${memberOpts(val, modalCat)}
+        ${memberOpts(val, modalCat, modalConflict)}
       </select>
       ${modalAssignees.length > 1
         ? `<button class="btn-icon" onclick="removeModalSlot(${i},'${taskId}')" title="제거">✕</button>`
@@ -1076,9 +1111,12 @@ function renderEditAssigneeSlots(taskId) {
   const el = document.getElementById('edit-assignee-slots');
   if (!el) return;
   const cat = document.getElementById('edit-task-category')?.value || '';
+  const date = document.getElementById('edit-task-due')?.value || '';
+  const timeDesc = document.getElementById('edit-task-time')?.value || '';
+  const conflictCheck = date ? { date, timeDesc, excludeId: taskId } : null;
   el.innerHTML = editAssigneeSlots.map((val, i) => `
     <div class="assignee-slot">
-      <select onchange="editAssigneeSlots[${i}]=this.value">${memberOpts(val, cat)}</select>
+      <select onchange="editAssigneeSlots[${i}]=this.value">${memberOpts(val, cat, conflictCheck)}</select>
       ${editAssigneeSlots.length > 1
         ? `<button class="btn-icon" onclick="removeEditSlot(${i},'${taskId}')" title="제거">✕</button>`
         : ''}
@@ -1288,9 +1326,17 @@ function parseImportFile(file) {
           };
 
           const start = fmtTime(r['start']), end = fmtTime(r['end']);
-          const VALID_CATS = ['JV', 'WW', '컨피'];
-          const rawCat = String(r['category'] || '').trim();
-          const category = VALID_CATS.includes(rawCat) ? rawCat : '';
+
+          // 컬럼명 다양한 케이스 대응 (Category / category / 카테고리 등)
+          const rawCat = String(
+            r['category'] || r['카테고리'] || r['cat'] || ''
+          ).trim();
+          const rawCatUp = rawCat.toUpperCase();
+          const category = rawCatUp === 'JV' ? 'JV'
+            : rawCatUp === 'WW' ? 'WW'
+            : rawCat === '컨피' || rawCatUp === 'CONFI' ? '컨피'
+            : '';
+
           return { _id: i, _checked: true, title: String(r['task']).trim(), date: dateStr, timeDesc: start ? `${start}${end?' ~ '+end:''}` : '', category };
         });
 
